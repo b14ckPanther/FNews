@@ -73,15 +73,7 @@ export default function ComparisonPhase({
     }
   }, [isHost, game.id, game.currentRoundNumber, game.totalRounds, game.players, round.id])
 
-  useEffect(() => {
-    // Auto-advance after 10 seconds
-    if (isHost && analysis) {
-      const timer = setTimeout(() => {
-        handleNext()
-      }, 10000)
-      return () => clearTimeout(timer)
-    }
-  }, [isHost, analysis, handleNext])
+  // No auto-advance - admin controls when to proceed
 
   if (!analysis) {
     return (
