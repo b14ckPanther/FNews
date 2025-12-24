@@ -39,13 +39,28 @@ export default function GuessingPhase({
       const interval = setInterval(() => {
         const remaining = Math.max(0, round.guessingEndsAt! - Date.now())
         setTimeRemaining(Math.ceil(remaining / 1000))
-        if (remaining <= 0) {
+        
+        // Auto-advance to reveal phase when timer ends (host only)
+        if (remaining <= 0 && isHost && round.phase === 'guessing') {
+          clearInterval(interval)
+          // Trigger analysis and move to reveal
+          fetch('/api/game/analyze-round', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameId: game.id,
+              roundId: round.id,
+            }),
+          }).then(() => {
+            updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
+          }).catch(console.error)
+        } else if (remaining <= 0) {
           clearInterval(interval)
         }
       }, 100)
       return () => clearInterval(interval)
     }
-  }, [round.guessingEndsAt])
+  }, [round.guessingEndsAt, round.phase, isHost, game.id, round.id])
 
   const handleToggleTechnique = (technique: ManipulationTechnique) => {
     if (submitted) return
