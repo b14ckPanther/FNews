@@ -33,6 +33,7 @@ export default function GuessingPhase({
   >([])
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [timerExtended, setTimerExtended] = useState(false)
 
   useEffect(() => {
     if (round.guessingEndsAt) {
@@ -44,8 +45,9 @@ export default function GuessingPhase({
         const allPlayersAnswered = Object.keys(round.playerGuesses).length >= Object.keys(game.players).length
         
         // Extend timer by 15 seconds when all players answer (host only, only once)
-        if (isHost && round.phase === 'guessing' && allPlayersAnswered && remaining > 0 && remaining < 15000) {
+        if (isHost && round.phase === 'guessing' && allPlayersAnswered && !timerExtended && remaining > 0) {
           // Extend timer by 15 seconds for discussion time
+          setTimerExtended(true)
           const newEndTime = Date.now() + 15000
           updateRoundPhase(game.id, round.id, 'guessing', newEndTime).catch(console.error)
         }
@@ -84,7 +86,7 @@ export default function GuessingPhase({
       }, 100)
       return () => clearInterval(interval)
     }
-  }, [round.guessingEndsAt, round.phase, round.playerGuesses, game.players, isHost, game.id, round.id])
+  }, [round.guessingEndsAt, round.phase, round.playerGuesses, game.players, isHost, game.id, round.id, timerExtended])
 
   const handleToggleTechnique = (technique: ManipulationTechnique) => {
     if (submitted) return
