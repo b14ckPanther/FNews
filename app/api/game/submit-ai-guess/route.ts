@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { submitGuess } from '@/lib/firebase/gameService'
-import { getDoc, doc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
-import { Game, Round } from '@/types/game'
+import { ManipulationTechnique } from '@/types/game'
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +16,12 @@ export async function POST(request: Request) {
     const delay = Math.random() * 2000 + 1000
     await new Promise((resolve) => setTimeout(resolve, delay))
 
-    await submitGuess(gameId, roundId, aiPlayerId, techniques)
+    // Type assertion - validate techniques are valid ManipulationTechnique values
+    const validTechniques = techniques.filter((t): t is ManipulationTechnique =>
+      ['emotional_language', 'false_dilemma', 'scapegoating', 'ad_hominem', 'inconsistency', 'appeal_to_authority', 'bandwagon', 'slippery_slope'].includes(t)
+    ) as ManipulationTechnique[]
+
+    await submitGuess(gameId, roundId, aiPlayerId, validTechniques)
 
     return NextResponse.json({ success: true })
   } catch (error) {
