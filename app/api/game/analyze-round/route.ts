@@ -3,7 +3,7 @@ import { analyzePost } from '@/lib/ai/geminiService'
 import { calculateScore } from '@/lib/game/scoring'
 import { getDoc, doc, updateDoc } from 'firebase/firestore'
 import { getServerFirestore } from '@/lib/firebase/serverConfig'
-import { Game, Round } from '@/types/game'
+import { Game, Round, ManipulationTechnique } from '@/types/game'
 
 export async function POST(request: Request) {
   let gameId: string | undefined
