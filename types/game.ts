@@ -44,7 +44,7 @@ export interface Round {
     techniques: ManipulationTechnique[]
     timestamp: number
   }>
-  phase: 'waiting' | 'guessing' | 'reveal' | 'discussion' | 'comparison' | 'complete'
+  phase: 'waiting' | 'guessing' | 'reveal' | 'comparison' | 'complete'
   startedAt?: number
   guessingEndsAt?: number
 }

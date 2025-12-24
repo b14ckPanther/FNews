@@ -43,8 +43,15 @@ export default function GuessingPhase({
         // Check if all players have answered
         const allPlayersAnswered = Object.keys(round.playerGuesses).length >= Object.keys(game.players).length
         
-        // Auto-advance when all players answer OR timer ends (host only)
-        if (isHost && round.phase === 'guessing' && (allPlayersAnswered || remaining <= 0)) {
+        // Extend timer by 15 seconds when all players answer (host only, only once)
+        if (isHost && round.phase === 'guessing' && allPlayersAnswered && remaining > 0 && remaining < 15000) {
+          // Extend timer by 15 seconds for discussion time
+          const newEndTime = Date.now() + 15000
+          updateRoundPhase(game.id, round.id, 'guessing', newEndTime).catch(console.error)
+        }
+        
+        // Auto-advance when timer ends (host only)
+        if (isHost && round.phase === 'guessing' && remaining <= 0) {
           clearInterval(interval)
           // Trigger analysis and move to reveal
           fetch('/api/game/analyze-round', {
@@ -71,7 +78,7 @@ export default function GuessingPhase({
             // Still try to move to reveal phase even if analysis fails
             updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
           })
-        } else if (remaining <= 0) {
+        } else if (remaining <= 0 && !isHost) {
           clearInterval(interval)
         }
       }, 100)
