@@ -171,7 +171,7 @@ export async function analyzePost(
   }
 }
 
-async function generateNeutralAlternativeFallback(
+export async function generateNeutralAlternativeFallback(
   manipulativePost: string,
   topic: string
 ): Promise<string> {
