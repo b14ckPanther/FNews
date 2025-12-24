@@ -51,6 +51,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!user || game) return
 
+    let unsubscribe: (() => void) | null = null
+
     // Create game automatically when admin logs in (only once)
     const createAdminGame = async () => {
       try {
@@ -58,11 +60,10 @@ export default function AdminDashboard() {
         const gameId = await createGame(user.uid, 'Admin')
         
         // Subscribe to game updates
-        const unsubscribe = subscribeToGame(gameId, (gameData) => {
+        unsubscribe = subscribeToGame(gameId, (gameData) => {
           setGame(gameData)
         })
         setGameLoading(false)
-        return () => unsubscribe()
       } catch (error) {
         console.error('Error creating game:', error)
         setGameLoading(false)
@@ -70,6 +71,12 @@ export default function AdminDashboard() {
     }
 
     createAdminGame()
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
