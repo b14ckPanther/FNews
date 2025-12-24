@@ -69,8 +69,8 @@ export default function AdminDashboard() {
       }
     }
 
-    createAdminGame()
-  }, [user, game])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   const handleStartGame = async () => {
     if (!game || !user) return
