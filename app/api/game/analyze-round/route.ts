@@ -81,9 +81,12 @@ export async function POST(request: Request) {
     // Ensure correctTechniques is in the analysis (for consistency)
     analysis.correctTechniques = correctTechniques
 
-    // Update round with analysis
+    // Update round with analysis (use server-side Firestore directly)
     try {
-      await updateRoundAnalysis(gameId, roundId, analysis)
+      const gameRef = doc(db, 'games', gameId)
+      await updateDoc(gameRef, {
+        [`rounds.${roundId}.aiAnalysis`]: analysis,
+      })
     } catch (error) {
       console.error('Error updating round analysis:', error)
       throw new Error(`Failed to update round analysis: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -92,6 +95,14 @@ export async function POST(request: Request) {
     // Calculate scores for all players
     const totalTime = 60000 // 60 seconds
     const playerGuesses = round.playerGuesses
+
+    // Calculate and update scores using server-side Firestore
+    const gameRef = doc(db, 'games', gameId)
+    const gameDocAfter = await getDoc(gameRef)
+    if (!gameDocAfter.exists()) {
+      throw new Error('Game not found after analysis')
+    }
+    const currentGame = gameDocAfter.data() as Game
 
     for (const [playerId, guess] of Object.entries(playerGuesses)) {
       if (game.players[playerId]?.isAI) continue
@@ -108,7 +119,11 @@ export async function POST(request: Request) {
           totalTime
         )
 
-        await updatePlayerScore(gameId, playerId, score)
+        // Update score directly using server Firestore
+        const currentScore = currentGame.players[playerId]?.score || 0
+        await updateDoc(gameRef, {
+          [`players.${playerId}.score`]: currentScore + score,
+        })
       } catch (error) {
         console.error(`Error calculating score for player ${playerId}:`, error)
         // Continue with other players even if one fails
@@ -131,7 +146,11 @@ export async function POST(request: Request) {
           totalTime
         )
 
-        await updatePlayerScore(gameId, aiPlayer.id, score)
+        // Update AI score directly using server Firestore
+        const currentScore = currentGame.players[aiPlayer.id]?.score || 0
+        await updateDoc(gameRef, {
+          [`players.${aiPlayer.id}.score`]: currentScore + score,
+        })
       } catch (error) {
         console.error(`Error calculating score for AI player:`, error)
         // Continue even if AI score calculation fails
