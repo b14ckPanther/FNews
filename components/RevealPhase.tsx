@@ -96,16 +96,17 @@ export default function RevealPhase({
       })
     }
 
-    // Auto-advance after 8 seconds
-    if (isHost && analysis) {
+    // Auto-advance after 8 seconds if analysis exists, or after 12 seconds if it doesn't (to allow time for fallback)
+    if (isHost) {
+      const delay = analysis ? 8000 : 12000
       const timer = setTimeout(() => {
         handleNext()
-      }, 8000)
+      }, delay)
       return () => clearTimeout(timer)
     }
   }, [isHost, analysis, game.id, round.id, round.correctTechniques, handleNext])
 
-  const manipulationLevel = analysis?.manipulationLevel || 0
+  const manipulationLevel = displayAnalysis?.manipulationLevel || 0
   const levelColor =
     manipulationLevel >= 80
       ? 'text-red-500'
@@ -120,7 +121,16 @@ export default function RevealPhase({
     return 'bg-fire-600'
   }
 
-  if (!analysis) {
+  // Use fallback analysis if no analysis exists but we have correctTechniques
+  const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
+    correctTechniques: round.correctTechniques,
+    explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
+    neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+    manipulationLevel: 50 + round.correctTechniques.length * 10,
+    aiCommentary: 'מניפולציה מעניינת!',
+  } : null)
+
+  if (!displayAnalysis) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center" dir="rtl">
         <div className="text-fire-500">מכין ניתוח...</div>
@@ -131,12 +141,12 @@ export default function RevealPhase({
   const playerGuess = round.playerGuesses[userId]
   const correctCount = playerGuess
     ? playerGuess.techniques.filter((t) =>
-        analysis.correctTechniques.includes(t)
+        displayAnalysis.correctTechniques.includes(t)
       ).length
     : 0
   const incorrectCount = playerGuess
     ? playerGuess.techniques.filter(
-        (t) => !analysis.correctTechniques.includes(t)
+        (t) => !displayAnalysis.correctTechniques.includes(t)
       ).length
     : 0
 
@@ -157,7 +167,7 @@ export default function RevealPhase({
               הטכניקות הנכונות:
             </h3>
             <div className="flex flex-wrap gap-2">
-              {analysis.correctTechniques.map((technique) => {
+              {displayAnalysis.correctTechniques.map((technique) => {
                 const isCorrect = playerGuess?.techniques.includes(technique)
                 return (
                   <div
@@ -213,20 +223,20 @@ export default function RevealPhase({
             </p>
           </div>
 
-          {analysis.explanation && (
+          {displayAnalysis.explanation && (
             <div className="mb-6 bg-gray-900 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-fire-400 mb-3">
                 הסבר
               </h3>
               <p className="text-white leading-relaxed">
-                {analysis.explanation}
+                {displayAnalysis.explanation}
               </p>
             </div>
           )}
 
-          {analysis.aiCommentary && (
+          {displayAnalysis.aiCommentary && (
             <div className="mb-6 bg-fire-900/20 rounded-lg p-4 border border-fire-800">
-              <p className="text-fire-300 italic">{analysis.aiCommentary}</p>
+              <p className="text-fire-300 italic">{displayAnalysis.aiCommentary}</p>
             </div>
           )}
 

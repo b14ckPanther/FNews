@@ -22,6 +22,15 @@ export default function ComparisonPhase({
   isHost,
 }: ComparisonPhaseProps) {
   const analysis = round.aiAnalysis
+  
+  // Use fallback analysis if no analysis exists but we have correctTechniques
+  const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
+    correctTechniques: round.correctTechniques,
+    explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
+    neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+    manipulationLevel: 50 + round.correctTechniques.length * 10,
+    aiCommentary: 'מניפולציה מעניינת!',
+  } : null)
 
   const handleNext = useCallback(async () => {
     if (!isHost) return
@@ -75,7 +84,7 @@ export default function ComparisonPhase({
 
   // No auto-advance - admin controls when to proceed
 
-  if (!analysis) {
+  if (!displayAnalysis) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center" dir="rtl">
         <div className="text-fire-500">טוען...</div>
@@ -107,7 +116,7 @@ export default function ComparisonPhase({
               גרסה ניטרלית
             </h3>
             <p className="text-white leading-relaxed whitespace-pre-wrap">
-              {analysis.neutralAlternative}
+              {displayAnalysis.neutralAlternative}
             </p>
           </div>
         </div>

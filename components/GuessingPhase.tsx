@@ -56,28 +56,23 @@ export default function GuessingPhase({
         if (isHost && round.phase === 'guessing' && remaining <= 0) {
           clearInterval(interval)
           // Trigger analysis and move to reveal
-          fetch('/api/game/analyze-round', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              gameId: game.id,
-              roundId: round.id,
+          // Always move to reveal phase, even if analysis fails (it will handle fallback)
+          Promise.all([
+            fetch('/api/game/analyze-round', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                gameId: game.id,
+                roundId: round.id,
+              }),
+            }).catch((error) => {
+              console.error('Error calling analyze-round:', error)
+              return { ok: false, json: () => Promise.resolve({ error: 'Analysis failed' }) }
             }),
-          })
-          .then(async (response) => {
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}))
-              console.error('Failed to analyze round:', errorData)
-              throw new Error(errorData.error || 'Failed to analyze round')
-            }
-            return response.json()
-          })
-          .then(() => {
-            updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
-          })
-          .catch((error) => {
+            updateRoundPhase(game.id, round.id, 'reveal')
+          ]).catch((error) => {
             console.error('Error in auto-advance:', error)
-            // Still try to move to reveal phase even if analysis fails
+            // Ensure we move to reveal phase even if everything fails
             updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
           })
         } else if (remaining <= 0 && !isHost) {
