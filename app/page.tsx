@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import IntroSequence from '@/components/IntroSequence'
 import LobbyScreen from '@/components/LobbyScreen'
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
