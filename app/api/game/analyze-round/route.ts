@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server'
-import {
-  updateRoundAnalysis,
-  updatePlayerScore,
-  submitGuess,
-} from '@/lib/firebase/gameService'
 import { analyzePost } from '@/lib/ai/geminiService'
 import { calculateScore } from '@/lib/game/scoring'
-import { getDoc, doc } from 'firebase/firestore'
+import { getDoc, doc, updateDoc } from 'firebase/firestore'
 import { getServerFirestore } from '@/lib/firebase/serverConfig'
 import { Game, Round } from '@/types/game'
 
@@ -82,8 +77,8 @@ export async function POST(request: Request) {
     analysis.correctTechniques = correctTechniques
 
     // Update round with analysis (use server-side Firestore directly)
+    const gameRef = doc(db, 'games', gameId)
     try {
-      const gameRef = doc(db, 'games', gameId)
       await updateDoc(gameRef, {
         [`rounds.${roundId}.aiAnalysis`]: analysis,
       })
@@ -97,7 +92,6 @@ export async function POST(request: Request) {
     const playerGuesses = round.playerGuesses
 
     // Calculate and update scores using server-side Firestore
-    const gameRef = doc(db, 'games', gameId)
     const gameDocAfter = await getDoc(gameRef)
     if (!gameDocAfter.exists()) {
       throw new Error('Game not found after analysis')
