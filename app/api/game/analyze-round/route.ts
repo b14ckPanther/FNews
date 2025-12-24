@@ -61,12 +61,13 @@ export async function POST(request: Request) {
       )
     } catch (error) {
       console.error('Error calling analyzePost:', error)
-      // Use fallback analysis instead of failing completely
+      // Use fallback analysis - analyzePost already handles generating neutral alternative in its catch block
+      // But if it completely fails, create a basic one based on the topic
       console.warn('Using fallback analysis due to AI error')
       analysis = {
         correctTechniques,
         explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-        neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+        neutralAlternative: `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.`,
         manipulationLevel: 50 + correctTechniques.length * 10,
         aiCommentary: 'מניפולציה מעניינת!',
       }
@@ -174,10 +175,12 @@ export async function POST(request: Request) {
           const round = game.rounds[roundId]
           if (round) {
             const fallbackTechniques = round.correctTechniques || ['emotional_language', 'false_dilemma'] as ManipulationTechnique[]
+            // Generate a proper neutral alternative based on the post
+            const neutralAlternative = `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.`
             const fallbackAnalysis = {
               correctTechniques: fallbackTechniques,
               explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-              neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+              neutralAlternative,
               manipulationLevel: 50 + fallbackTechniques.length * 10,
               aiCommentary: 'מניפולציה מעניינת!',
             }

@@ -83,9 +83,18 @@ export async function analyzePost(
     .map((t) => techniqueNames[t])
     .join(', ')
 
-  const prompt = `פוסט: "${post}"
-טכניקות: ${correctTechniquesStr}
-JSON: {"explanation":"הסבר קצר (משפט אחד)","neutralAlternative":"גרסה ניטרלית קצרה (2-3 משפטים)","manipulationLevel":50,"aiCommentary":"תגובה קצרה"}`
+  const prompt = `פוסט מניפולטיבי: "${post}"
+הפוסט משתמש בטכניקות: ${correctTechniquesStr}
+
+צור גרסה ניטרלית של אותו פוסט - אותה מסר אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה. שמור על אותו נושא ותוכן אבל בצורה מאוזנת וניטרלית.
+
+החזר JSON בלבד:
+{
+  "explanation": "הסבר קצר (משפט אחד) על הטכניקות המניפולטיביות",
+  "neutralAlternative": "גרסה ניטרלית מלאה של הפוסט (2-3 משפטים, אותה מסר אבל ללא מניפולציה)",
+  "manipulationLevel": 50,
+  "aiCommentary": "תגובה קצרה"
+}`
 
   try {
     const result = await model.generateContent(prompt)
@@ -128,15 +137,46 @@ JSON: {"explanation":"הסבר קצר (משפט אחד)","neutralAlternative":"�
     }
   } catch (error) {
     console.error('Error analyzing post:', error)
-    // Fallback analysis
+    // Generate a better fallback neutral alternative
+    const neutralAlternative = await generateNeutralAlternativeFallback(post, topic)
     return {
       correctTechniques,
       explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-      neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+      neutralAlternative,
       manipulationLevel: 50 + correctTechniques.length * 10,
       aiCommentary: 'מניפולציה מעניינת!',
     }
   }
+}
+
+async function generateNeutralAlternativeFallback(
+  manipulativePost: string,
+  topic: string
+): Promise<string> {
+  try {
+    const model = getGenAI().getGenerativeModel({ model: 'gemini-3-flash-preview' })
+    const prompt = `פוסט מניפולטיבי: "${manipulativePost}"
+
+צור גרסה ניטרלית של הפוסט הזה - אותה מסר אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות. שמור על אותו נושא אבל בצורה מאוזנת וניטרלית.
+
+החזר רק את הגרסה הניטרלית, ללא הסברים נוספים.`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    let neutralText = response.text().trim()
+    
+    // Clean up the response
+    neutralText = neutralText.replace(/^["']|["']$/g, '').trim()
+    
+    if (neutralText && neutralText.length > 10) {
+      return neutralText
+    }
+  } catch (error) {
+    console.error('Error generating fallback neutral alternative:', error)
+  }
+  
+  // Ultimate fallback - create a simple neutral version
+  return `דיון על ${topic} בצורה מאוזנת ומבוססת עובדות.`
 }
 
 export async function generateAIPlayerGuess(

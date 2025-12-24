@@ -27,7 +27,7 @@ export default function ComparisonPhase({
   const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
     correctTechniques: round.correctTechniques,
     explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-    neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+    neutralAlternative: `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.`,
     manipulationLevel: 50 + round.correctTechniques.length * 10,
     aiCommentary: 'מניפולציה מעניינת!',
   } : null)
