@@ -87,7 +87,29 @@ export default function LobbyScreen() {
     try {
       setLoading(true)
       setError('')
-      const gameId = await joinGame(gameCode.trim(), user.uid, playerName.trim())
+
+      // Ensure user is authenticated
+      let currentUser = user
+      if (!currentUser) {
+        await signInAnonymous()
+        // Wait for auth to propagate
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        // Get updated user from auth state
+        currentUser = await new Promise<User | null>((resolve) => {
+          const unsubscribe = onAuthChange((u) => {
+            resolve(u)
+            unsubscribe()
+          })
+          // Timeout fallback
+          setTimeout(() => resolve(null), 2000)
+        })
+      }
+
+      if (!currentUser) {
+        throw new Error('Failed to authenticate user')
+      }
+
+      const gameId = await joinGame(gameCode.trim(), currentUser.uid, playerName.trim())
       if (!gameId) {
         setError('משחק לא נמצא. אנא וודא שהקוד נכון והמשחק עדיין בלובי (לא התחיל)')
         setLoading(false)
