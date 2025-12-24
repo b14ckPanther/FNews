@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     analysis.correctTechniques = correctTechniques
 
     // Update round with analysis (use server-side Firestore directly)
-    const gameRef = doc(db, 'games', gameId)
+    // Reuse gameRef that was already created above
     try {
       await updateDoc(gameRef, {
         [`rounds.${roundId}.aiAnalysis`]: analysis,
