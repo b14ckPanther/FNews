@@ -36,8 +36,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Round not found' }, { status: 404 })
     }
 
-    // Get correct techniques from round (stored separately)
-    const correctTechniques = round.aiAnalysis?.correctTechniques || []
+    // Get correct techniques from round (stored when round was created)
+    const correctTechniques = round.correctTechniques || []
     
     if (correctTechniques.length === 0) {
       return NextResponse.json(

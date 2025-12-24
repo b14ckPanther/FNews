@@ -40,8 +40,11 @@ export default function GuessingPhase({
         const remaining = Math.max(0, round.guessingEndsAt! - Date.now())
         setTimeRemaining(Math.ceil(remaining / 1000))
         
-        // Auto-advance to reveal phase when timer ends (host only)
-        if (remaining <= 0 && isHost && round.phase === 'guessing') {
+        // Check if all players have answered
+        const allPlayersAnswered = Object.keys(round.playerGuesses).length >= Object.keys(game.players).length
+        
+        // Auto-advance when all players answer OR timer ends (host only)
+        if (isHost && round.phase === 'guessing' && (allPlayersAnswered || remaining <= 0)) {
           clearInterval(interval)
           // Trigger analysis and move to reveal
           fetch('/api/game/analyze-round', {
@@ -60,7 +63,7 @@ export default function GuessingPhase({
       }, 100)
       return () => clearInterval(interval)
     }
-  }, [round.guessingEndsAt, round.phase, isHost, game.id, round.id])
+  }, [round.guessingEndsAt, round.phase, round.playerGuesses, game.players, isHost, game.id, round.id])
 
   const handleToggleTechnique = (technique: ManipulationTechnique) => {
     if (submitted) return

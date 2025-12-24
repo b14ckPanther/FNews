@@ -38,12 +38,13 @@ export interface Round {
   roundNumber: number
   topic: string
   manipulativePost: string
+  correctTechniques: ManipulationTechnique[] // Stored when round is created
   aiAnalysis?: AIAnalysis
   playerGuesses: Record<string, {
     techniques: ManipulationTechnique[]
     timestamp: number
   }>
-  phase: 'waiting' | 'guessing' | 'reveal' | 'comparison' | 'complete'
+  phase: 'waiting' | 'guessing' | 'reveal' | 'discussion' | 'comparison' | 'complete'
   startedAt?: number
   guessingEndsAt?: number
 }

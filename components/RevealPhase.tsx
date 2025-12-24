@@ -32,7 +32,7 @@ export default function RevealPhase({
 
   const handleNext = useCallback(async () => {
     if (!isHost) return
-    await updateRoundPhase(game.id, round.id, 'comparison')
+    await updateRoundPhase(game.id, round.id, 'discussion')
   }, [isHost, game.id, round.id])
 
   useEffect(() => {

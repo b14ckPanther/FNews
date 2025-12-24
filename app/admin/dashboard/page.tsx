@@ -121,16 +121,6 @@ export default function AdminDashboard() {
         }),
       }).catch(console.error)
 
-      await fetch('/api/game/store-round-techniques', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gameId: game.id,
-          roundId,
-          techniques,
-        }),
-      }).catch(console.error)
-
       // Redirect to game
       router.push(`/game/${game.id}`)
     } catch (error) {

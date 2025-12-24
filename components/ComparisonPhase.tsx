@@ -158,42 +158,105 @@ function Leaderboard({ game }: { game: Game }) {
     (a, b) => b.score - a.score
   )
 
+  const top3 = players.slice(0, 3)
+  const rest = players.slice(3)
+
+  const getRankStyle = (index: number) => {
+    if (index === 0) {
+      return {
+        bg: 'bg-yellow-900/40 border-yellow-600',
+        badge: 'bg-yellow-600 text-white',
+        text: 'text-yellow-300',
+        medal: '🥇'
+      }
+    }
+    if (index === 1) {
+      return {
+        bg: 'bg-gray-700/40 border-gray-500',
+        badge: 'bg-gray-500 text-white',
+        text: 'text-gray-300',
+        medal: '🥈'
+      }
+    }
+    if (index === 2) {
+      return {
+        bg: 'bg-orange-900/40 border-orange-600',
+        badge: 'bg-orange-600 text-white',
+        text: 'text-orange-300',
+        medal: '🥉'
+      }
+    }
+    return {
+      bg: 'bg-gray-800',
+      badge: 'bg-gray-700 text-fire-300',
+      text: 'text-white',
+      medal: ''
+    }
+  }
+
   return (
     <div className="mt-8 bg-gray-900 rounded-lg p-6">
       <h3 className="text-2xl font-semibold text-fire-400 mb-4">לוח תוצאות</h3>
-      <div className="space-y-2">
-        {players.map((player, index) => (
-          <div
-            key={player.id}
-            className={`flex items-center justify-between p-3 rounded-lg ${
-              index === 0
-                ? 'bg-fire-900/30 border border-fire-700'
-                : 'bg-gray-800'
-            }`}
-          >
-            <div className="flex items-center gap-3">
+      
+      {/* Top 3 */}
+      {top3.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {top3.map((player, index) => {
+            const style = getRankStyle(index)
+            return (
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                  index === 0
-                    ? 'bg-fire-600 text-white'
-                    : 'bg-gray-700 text-fire-300'
-                }`}
+                key={player.id}
+                className={`flex items-center justify-between p-4 rounded-lg border-2 ${style.bg}`}
               >
-                {index + 1}
-              </div>
-              <div>
-                <div className="text-white font-medium">
-                  {player.displayName}
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${style.badge}`}>
+                    {style.medal || index + 1}
+                  </div>
+                  <div>
+                    <div className={`font-semibold text-lg ${style.text}`}>
+                      {player.displayName}
+                    </div>
+                    {player.isAI && (
+                      <div className="text-xs text-fire-400">בינה מלאכותית</div>
+                    )}
+                  </div>
                 </div>
-                {player.isAI && (
-                  <div className="text-xs text-fire-400">בינה מלאכותית</div>
-                )}
+                <div className={`font-bold text-2xl ${style.text}`}>
+                  {player.score}
+                </div>
               </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Rest of players */}
+      {rest.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-fire-400 text-sm mb-2 font-medium">יתר השחקנים:</div>
+          {rest.map((player, index) => (
+            <div
+              key={player.id}
+              className="flex items-center justify-between p-3 rounded-lg bg-gray-800"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-gray-700 text-fire-300 text-sm">
+                  {index + 4}
+                </div>
+                <div>
+                  <div className="text-white font-medium">
+                    {player.displayName}
+                  </div>
+                  {player.isAI && (
+                    <div className="text-xs text-fire-400">בינה מלאכותית</div>
+                  )}
+                </div>
+              </div>
+              <div className="text-fire-500 font-bold">{player.score}</div>
             </div>
-            <div className="text-fire-500 font-bold text-lg">{player.score}</div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

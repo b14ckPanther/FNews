@@ -4,6 +4,7 @@ import { Game, Round } from '@/types/game'
 import { useEffect, useState } from 'react'
 import GuessingPhase from './GuessingPhase'
 import RevealPhase from './RevealPhase'
+import DiscussionPhase from './DiscussionPhase'
 import ComparisonPhase from './ComparisonPhase'
 
 interface GameRoundProps {
@@ -39,6 +40,15 @@ export default function GameRound({
       case 'reveal':
         return (
           <RevealPhase
+            game={game}
+            round={localRound}
+            userId={userId}
+            isHost={isHost}
+          />
+        )
+      case 'discussion':
+        return (
+          <DiscussionPhase
             game={game}
             round={localRound}
             userId={userId}

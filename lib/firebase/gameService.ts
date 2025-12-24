@@ -29,7 +29,7 @@ export async function createGame(hostId: string, hostName: string): Promise<stri
     code,
     hostId,
     status: 'lobby',
-    totalRounds: 5,
+    totalRounds: 10,
     currentRoundNumber: 0,
     createdAt: Date.now(),
     players: {
@@ -157,7 +157,7 @@ export async function createRound(
   roundNumber: number,
   topic: string,
   manipulativePost: string,
-  correctTechniques?: string[]
+  correctTechniques: ManipulationTechnique[]
 ): Promise<string> {
   if (!db) {
     throw new Error('Firestore is not initialized')
@@ -165,17 +165,14 @@ export async function createRound(
   const gameRef = doc(db, GAMES_COLLECTION, gameId)
   const roundId = `round-${roundNumber}`
 
-  const round: any = {
+  const round: Round = {
     id: roundId,
     roundNumber,
     topic,
     manipulativePost,
+    correctTechniques,
     playerGuesses: {},
     phase: 'waiting',
-  }
-
-  if (correctTechniques) {
-    round.aiAnalysis = { correctTechniques }
   }
 
   await updateDoc(gameRef, {

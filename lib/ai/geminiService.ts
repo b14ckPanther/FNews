@@ -54,7 +54,7 @@ export async function generateManipulativePost(): Promise<{
     .map((t) => techniqueNames[t])
     .join(', ')
 
-  const prompt = `פוסט בעברית קצר (3-5 משפטים) על "${topic}" עם מניפולציות: ${techniqueNamesStr}. הומוריסטי, לא פוגעני, לא פוליטי. החזר רק את הפוסט.`
+  const prompt = `פוסט בעברית קצר (2-3 משפטים) על "${topic}" עם מניפולציות: ${techniqueNamesStr}. הומוריסטי, לא פוגעני. החזר רק את הפוסט.`
 
   try {
     const result = await model.generateContent(prompt)
@@ -83,9 +83,9 @@ export async function analyzePost(
     .map((t) => techniqueNames[t])
     .join(', ')
 
-  const prompt = `פוסט מניפולטיבי בעברית על "${topic}": "${post}"
+  const prompt = `פוסט: "${post}"
 טכניקות: ${correctTechniquesStr}
-JSON: {"explanation":"הסבר קצר למה מניפולטיבי","neutralAlternative":"גרסה ניטרלית","manipulationLevel":50,"aiCommentary":"תגובה הומוריסטית"}`
+JSON: {"explanation":"הסבר קצר (משפט אחד)","neutralAlternative":"גרסה ניטרלית קצרה (2-3 משפטים)","manipulationLevel":50,"aiCommentary":"תגובה קצרה"}`
 
   try {
     const result = await model.generateContent(prompt)
@@ -137,10 +137,10 @@ export async function generateAIPlayerGuess(
 }> {
   const model = getGenAI().getGenerativeModel({ model: 'gemini-3-flash-preview' })
 
-  const prompt = `AI שחקן. פוסט: "${post}" נושא: ${topic}
-${shouldMakeMistake ? 'זהה טכניקות אבל הוסף אחת שלא קיימת או החמצה אחת.' : 'זהה נכון את הטכניקות.'}
+  const prompt = `פוסט: "${post}"
+${shouldMakeMistake ? 'הוסף טכניקה אחת לא נכונה או החמצה אחת.' : 'זהה נכון.'}
 רשימה: ${techniques.map((t) => techniqueNames[t]).join(', ')}
-JSON: {"techniques":["technique1","technique2"],"analysis":"תגובה הומוריסטית בעברית"}`
+JSON: {"techniques":["technique1"],"analysis":"תגובה קצרה"}`
 
   try {
     const result = await model.generateContent(prompt)
