@@ -42,7 +42,7 @@ export async function generateManipulativePost(): Promise<{
   post: string
   techniques: ManipulationTechnique[]
 }> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-pro' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   const topic = topics[Math.floor(Math.random() * topics.length)]
   const numTechniques = Math.floor(Math.random() * 3) + 2 // 2-4 techniques
@@ -54,9 +54,7 @@ export async function generateManipulativePost(): Promise<{
     .map((t) => techniqueNames[t])
     .join(', ')
 
-  const prompt = `צור פוסט בעברית קצר (3-5 משפטים) על הנושא "${topic}" שמשתמש בטכניקות מניפולציה: ${techniqueNamesStr}.
-הפוסט צריך להיות הומוריסטי ומגזים אבל לא פוגעני. אין להשתמש בתוכן פוליטי, קבוצות אמיתיות, קונפליקטים אמיתיים או שפה פוגענית.
-הפוסט צריך להכיל מניפולציות ברורות אבל עם הומור. החזר רק את הפוסט עצמו, ללא הסברים נוספים.`
+  const prompt = `פוסט בעברית קצר (3-5 משפטים) על "${topic}" עם מניפולציות: ${techniqueNamesStr}. הומוריסטי, לא פוגעני, לא פוליטי. החזר רק את הפוסט.`
 
   try {
     const result = await model.generateContent(prompt)
@@ -79,24 +77,15 @@ export async function analyzePost(
   topic: string,
   correctTechniques: ManipulationTechnique[]
 ): Promise<AIAnalysis> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-pro' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   const correctTechniquesStr = correctTechniques
     .map((t) => techniqueNames[t])
     .join(', ')
 
-  const prompt = `ניתן לך פוסט מניפולטיבי בעברית על הנושא "${topic}":
-"${post}"
-
-הפוסט משתמש בטכניקות המניפולציה הבאות: ${correctTechniquesStr}
-
-ענה בעברית בפורמט JSON עם השדות הבאים:
-1. "explanation": הסבר קצר (2-3 משפטים) למה הפוסט הוא מניפולטיבי
-2. "neutralAlternative": גרסה ניטרלית של אותו תוכן ללא מניפולציה (3-5 משפטים)
-3. "manipulationLevel": מספר בין 0 ל-100 המייצג את עוצמת ההשפעה הרגשית
-4. "aiCommentary": תגובה הומוריסטית קצרה (2-3 משפטים) על כמה ברורה או מתחכמת המניפולציה
-
-החזר רק JSON ללא טקסט נוסף.`
+  const prompt = `פוסט מניפולטיבי בעברית על "${topic}": "${post}"
+טכניקות: ${correctTechniquesStr}
+JSON: {"explanation":"הסבר קצר למה מניפולטיבי","neutralAlternative":"גרסה ניטרלית","manipulationLevel":50,"aiCommentary":"תגובה הומוריסטית"}`
 
   try {
     const result = await model.generateContent(prompt)
@@ -146,26 +135,12 @@ export async function generateAIPlayerGuess(
   techniques: ManipulationTechnique[]
   analysis: string
 }> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-pro' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
-  const mistakeInstruction = shouldMakeMistake
-    ? 'נסה לזהות כמה טכניקות אבל תוסיף גם אחת שלא קיימת בפועל, או תחמיץ אחת ברורה. התנהג כמו שחקן בטוח בעצמו מדי.'
-    : 'זהה נכון את הטכניקות אבל תוסיף הסבר מעט מגזים או הומוריסטי.'
-
-  const prompt = `אתה שחקן AI במשחק זיהוי מניפולציה. קיבלת את הפוסט הבא:
-"${post}"
-
-על הנושא: ${topic}
-
-${mistakeInstruction}
-
-זהות אילו טכניקות מניפולציה יש בפוסט מהרשימה: ${techniques.map((t) => techniqueNames[t]).join(', ')}.
-
-החזר JSON עם:
-1. "techniques": מערך של טכניקות שזיהית (שמות באנגלית: emotional_language, false_dilemma, scapegoating, ad_hominem, inconsistency, appeal_to_authority, bandwagon, slippery_slope)
-2. "analysis": הסבר קצר הומוריסטי בעברית על מה שאתה חושב שהפוסט עושה
-
-החזר רק JSON.`
+  const prompt = `AI שחקן. פוסט: "${post}" נושא: ${topic}
+${shouldMakeMistake ? 'זהה טכניקות אבל הוסף אחת שלא קיימת או החמצה אחת.' : 'זהה נכון את הטכניקות.'}
+רשימה: ${techniques.map((t) => techniqueNames[t]).join(', ')}
+JSON: {"techniques":["technique1","technique2"],"analysis":"תגובה הומוריסטית בעברית"}`
 
   try {
     const result = await model.generateContent(prompt)
