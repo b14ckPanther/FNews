@@ -106,6 +106,15 @@ export default function RevealPhase({
     }
   }, [isHost, analysis, game.id, round.id, round.correctTechniques, handleNext])
 
+  // Use fallback analysis if no analysis exists but we have correctTechniques
+  const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
+    correctTechniques: round.correctTechniques,
+    explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
+    neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+    manipulationLevel: 50 + round.correctTechniques.length * 10,
+    aiCommentary: 'מניפולציה מעניינת!',
+  } : null)
+
   const manipulationLevel = displayAnalysis?.manipulationLevel || 0
   const levelColor =
     manipulationLevel >= 80
@@ -120,15 +129,6 @@ export default function RevealPhase({
     if (level >= 40) return 'bg-yellow-600'
     return 'bg-fire-600'
   }
-
-  // Use fallback analysis if no analysis exists but we have correctTechniques
-  const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
-    correctTechniques: round.correctTechniques,
-    explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-    neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
-    manipulationLevel: 50 + round.correctTechniques.length * 10,
-    aiCommentary: 'מניפולציה מעניינת!',
-  } : null)
 
   if (!displayAnalysis) {
     return (
