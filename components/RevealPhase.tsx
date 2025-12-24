@@ -45,7 +45,55 @@ export default function RevealPhase({
           gameId: game.id,
           roundId: round.id,
         }),
-      }).catch(console.error)
+      })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Failed to analyze round:', errorData)
+          // Create fallback analysis to prevent getting stuck
+          if (round.correctTechniques && round.correctTechniques.length > 0) {
+            const fallbackAnalysis = {
+              correctTechniques: round.correctTechniques,
+              explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
+              neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+              manipulationLevel: 50 + round.correctTechniques.length * 10,
+              aiCommentary: 'מניפולציה מעניינת!',
+            }
+            // Try to update with fallback
+            fetch('/api/game/update-analysis-fallback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                gameId: game.id,
+                roundId: round.id,
+                analysis: fallbackAnalysis,
+              }),
+            }).catch(console.error)
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('Error calling analyze-round:', error)
+        // Create fallback analysis
+        if (round.correctTechniques && round.correctTechniques.length > 0) {
+          const fallbackAnalysis = {
+            correctTechniques: round.correctTechniques,
+            explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
+            neutralAlternative: 'גרסה ניטרלית של התוכן ללא מניפולציה',
+            manipulationLevel: 50 + round.correctTechniques.length * 10,
+            aiCommentary: 'מניפולציה מעניינת!',
+          }
+          fetch('/api/game/update-analysis-fallback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameId: game.id,
+              roundId: round.id,
+              analysis: fallbackAnalysis,
+            }),
+          }).catch(console.error)
+        }
+      })
     }
 
     // Auto-advance after 8 seconds
@@ -55,7 +103,7 @@ export default function RevealPhase({
       }, 8000)
       return () => clearTimeout(timer)
     }
-  }, [isHost, analysis, game.id, round.id, handleNext])
+  }, [isHost, analysis, game.id, round.id, round.correctTechniques, handleNext])
 
   const manipulationLevel = analysis?.manipulationLevel || 0
   const levelColor =
