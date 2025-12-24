@@ -107,10 +107,11 @@ export default function RevealPhase({
   }, [isHost, analysis, game.id, round.id, round.correctTechniques, handleNext])
 
   // Use fallback analysis if no analysis exists but we have correctTechniques
+  // Note: This fallback should rarely be used as analysis should be generated
   const displayAnalysis = analysis || (round.correctTechniques && round.correctTechniques.length > 0 ? {
     correctTechniques: round.correctTechniques,
     explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',
-    neutralAlternative: `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.`,
+    neutralAlternative: round.manipulativePost, // Use original post as fallback (will be replaced by proper analysis)
     manipulationLevel: 50 + round.correctTechniques.length * 10,
     aiCommentary: 'מניפולציה מעניינת!',
   } : null)

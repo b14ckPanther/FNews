@@ -115,10 +115,30 @@ export async function POST(request: Request) {
           totalTime
         )
 
+        // Get fresh game state to ensure we have the latest score
+        const freshGameDoc = await getDoc(gameRef)
+        if (!freshGameDoc.exists()) {
+          console.error(`Game ${gameId} not found when updating score for player ${playerId}`)
+          continue
+        }
+        const freshGame = freshGameDoc.data() as Game
+        const currentScore = freshGame.players[playerId]?.score || 0
+        const newScore = currentScore + score
+
+        console.log(`Updating score for player ${playerId}:`, {
+          playerTechniques: guess.techniques,
+          correctTechniques: analysis.correctTechniques,
+          correctCount: guess.techniques.filter(t => analysis.correctTechniques.includes(t)).length,
+          incorrectCount: guess.techniques.filter(t => !analysis.correctTechniques.includes(t)).length,
+          timeRemaining,
+          roundScore: score,
+          currentScore,
+          newScore
+        })
+
         // Update score directly using server Firestore
-        const currentScore = currentGame.players[playerId]?.score || 0
         await updateDoc(gameRef, {
-          [`players.${playerId}.score`]: currentScore + score,
+          [`players.${playerId}.score`]: newScore,
         })
       } catch (error) {
         console.error(`Error calculating score for player ${playerId}:`, error)
@@ -175,8 +195,18 @@ export async function POST(request: Request) {
           const round = game.rounds[roundId]
           if (round) {
             const fallbackTechniques = round.correctTechniques || ['emotional_language', 'false_dilemma'] as ManipulationTechnique[]
-            // Generate a proper neutral alternative based on the post
-            const neutralAlternative = `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.`
+            // Try to generate a proper neutral alternative using the fallback function
+            let neutralAlternative = round.manipulativePost // Default to original if generation fails
+            try {
+              const { generateNeutralAlternativeFallback } = await import('@/lib/ai/geminiService')
+              const generated = await generateNeutralAlternativeFallback(round.manipulativePost, round.topic)
+              if (generated && generated.length > 20 && !generated.includes('דיון מאוזן על')) {
+                neutralAlternative = generated
+              }
+            } catch (genError) {
+              console.error('Failed to generate neutral alternative in catch block:', genError)
+            }
+            
             const fallbackAnalysis = {
               correctTechniques: fallbackTechniques,
               explanation: 'הפוסט משתמש בטכניקות מניפולציה רגשית להטיית הדעה',

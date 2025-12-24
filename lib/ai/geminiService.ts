@@ -84,14 +84,18 @@ export async function analyzePost(
     .join(', ')
 
   const prompt = `פוסט מניפולטיבי: "${post}"
-הפוסט משתמש בטכניקות: ${correctTechniquesStr}
+הפוסט משתמש בטכניקות מניפולציה: ${correctTechniquesStr}
 
-צור גרסה ניטרלית של אותו פוסט - אותה מסר אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה. שמור על אותו נושא ותוכן אבל בצורה מאוזנת וניטרלית.
+**משימה חשובה:** צור גרסה ניטרלית מלאה של הפוסט הזה. הגרסה הניטרלית חייבת להיות כתיבה מחדש של אותו פוסט, עם אותו נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה.
 
-החזר JSON בלבד:
+דוגמה:
+פוסט מניפולטיבי: "או שאתה לומד עכשיו או שאתה נכשל לנצח!"
+גרסה ניטרלית: "למידה עקבית יכולה לעזור להצלחה בלימודים."
+
+החזר JSON בלבד (ללא טקסט נוסף):
 {
-  "explanation": "הסבר קצר (משפט אחד) על הטכניקות המניפולטיביות",
-  "neutralAlternative": "גרסה ניטרלית מלאה של הפוסט (2-3 משפטים, אותה מסר אבל ללא מניפולציה)",
+  "explanation": "הסבר קצר על הטכניקות המניפולטיביות בפוסט",
+  "neutralAlternative": "הגרסה הניטרלית המלאה של הפוסט (חייבת להיות כתיבה מחדש של הפוסט המקורי, לא רק משפט כללי)",
   "manipulationLevel": 50,
   "aiCommentary": "תגובה קצרה"
 }`
@@ -128,10 +132,28 @@ export async function analyzePost(
       manipulationLevel + correctTechniques.length * 10
     )
 
+    // Validate and ensure neutralAlternative is a proper rewrite, not a placeholder
+    let neutralAlternative = analysis.neutralAlternative || ''
+    
+    // If the neutral alternative looks like a placeholder, try to generate it properly
+    if (!neutralAlternative || 
+        neutralAlternative.includes('גרסה ניטרלית של התוכן') ||
+        neutralAlternative.includes('דיון מאוזן על') ||
+        neutralAlternative.length < 20) {
+      console.warn('Neutral alternative seems like placeholder, generating proper version')
+      try {
+        neutralAlternative = await generateNeutralAlternativeFallback(post, topic)
+      } catch (fallbackError) {
+        console.error('Failed to generate fallback neutral alternative:', fallbackError)
+        // Last resort: create a simple neutral version
+        neutralAlternative = `דיון מאוזן על ${topic} מבוסס עובדות.`
+      }
+    }
+
     return {
       correctTechniques,
       explanation: analysis.explanation || '',
-      neutralAlternative: analysis.neutralAlternative || '',
+      neutralAlternative,
       manipulationLevel,
       aiCommentary: analysis.aiCommentary || '',
     }
@@ -157,25 +179,38 @@ async function generateNeutralAlternativeFallback(
     const model = getGenAI().getGenerativeModel({ model: 'gemini-3-flash-preview' })
     const prompt = `פוסט מניפולטיבי: "${manipulativePost}"
 
-צור גרסה ניטרלית של הפוסט הזה - אותה מסר אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות. שמור על אותו נושא אבל בצורה מאוזנת וניטרלית.
+**חשוב מאוד:** כתוב מחדש את הפוסט הזה בגרסה ניטרלית. זה חייב להיות כתיבה מחדש של אותו פוסט עם אותו נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה.
 
-החזר רק את הגרסה הניטרלית, ללא הסברים נוספים.`
+דוגמה:
+פוסט מניפולטיבי: "באמת בחרת שוב בספה? הנעליים שלך מתייפחות בחושך מרוב הזנחה!"
+גרסה ניטרלית: "פעילות גופנית סדירה חשובה לבריאות. כדאי לנסות לשלב פעילות בשגרה היומית."
+
+החזר רק את הגרסה הניטרלית, ללא הסברים, ללא מרכאות, ללא טקסט נוסף.`
 
     const result = await model.generateContent(prompt)
     const response = await result.response
     let neutralText = response.text().trim()
     
-    // Clean up the response
-    neutralText = neutralText.replace(/^["']|["']$/g, '').trim()
+    // Clean up the response - remove quotes, markdown, etc.
+    neutralText = neutralText
+      .replace(/^["'`]|["'`]$/g, '') // Remove surrounding quotes
+      .replace(/^```[\w]*\n?|```$/g, '') // Remove code blocks
+      .replace(/^גרסה ניטרלית:?\s*/i, '') // Remove "גרסה ניטרלית:" prefix if present
+      .trim()
     
-    if (neutralText && neutralText.length > 10) {
+    // Validate it's not a placeholder
+    if (neutralText && 
+        neutralText.length > 15 && 
+        !neutralText.includes('גרסה ניטרלית של התוכן') &&
+        !neutralText.includes('דיון מאוזן על') &&
+        neutralText !== manipulativePost) {
       return neutralText
     }
   } catch (error) {
     console.error('Error generating fallback neutral alternative:', error)
   }
   
-  // Ultimate fallback - create a simple neutral version
+  // Ultimate fallback - create a simple neutral version based on topic
   return `דיון על ${topic} בצורה מאוזנת ומבוססת עובדות.`
 }
 

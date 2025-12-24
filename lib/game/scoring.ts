@@ -13,25 +13,27 @@ export function calculateScore(
     (t) => !correctTechniques.includes(t)
   ).length
 
-  // Base score: 10 points per correct technique
-  let score = correctCount * 10
+  // Base score: 15 points per correct technique (increased to reward partial correctness)
+  let score = correctCount * 15
 
   // Bonus for identifying all techniques correctly
   if (
     correctCount === correctTechniques.length &&
     incorrectCount === 0
   ) {
-    score += 20
+    score += 30 // Increased bonus for perfect answer
   }
 
-  // Speed bonus: up to 10 points based on how fast they answered
+  // Speed bonus: up to 15 points based on how fast they answered
   const timeRatio = Math.max(0, timeRemaining / totalTime)
-  const speedBonus = Math.floor(timeRatio * 10)
+  const speedBonus = Math.floor(timeRatio * 15)
   score += speedBonus
 
-  // Penalty for incorrect guesses: -5 points per wrong technique
-  score -= incorrectCount * 5
+  // Reduced penalty for incorrect guesses: -3 points per wrong technique (was -5)
+  // This allows partial credit to still result in positive scores
+  score -= incorrectCount * 3
 
+  // Ensure minimum score of 0, but allow partial credit to show
   return Math.max(0, score)
 }
 
