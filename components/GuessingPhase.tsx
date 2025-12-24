@@ -1,7 +1,7 @@
 'use client'
 
 import { Game, Round, ManipulationTechnique } from '@/types/game'
-import { submitGuess } from '@/lib/firebase/gameService'
+import { submitGuess, updateRoundPhase } from '@/lib/firebase/gameService'
 import { useState, useEffect } from 'react'
 
 interface GuessingPhaseProps {

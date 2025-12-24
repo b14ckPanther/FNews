@@ -42,7 +42,7 @@ export async function generateManipulativePost(): Promise<{
   post: string
   techniques: ManipulationTechnique[]
 }> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
 
   const topic = topics[Math.floor(Math.random() * topics.length)]
   const numTechniques = Math.floor(Math.random() * 3) + 2 // 2-4 techniques
@@ -77,7 +77,7 @@ export async function analyzePost(
   topic: string,
   correctTechniques: ManipulationTechnique[]
 ): Promise<AIAnalysis> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
 
   const correctTechniquesStr = correctTechniques
     .map((t) => techniqueNames[t])
@@ -135,7 +135,7 @@ export async function generateAIPlayerGuess(
   techniques: ManipulationTechnique[]
   analysis: string
 }> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
 
   const prompt = `AI שחקן. פוסט: "${post}" נושא: ${topic}
 ${shouldMakeMistake ? 'זהה טכניקות אבל הוסף אחת שלא קיימת או החמצה אחת.' : 'זהה נכון את הטכניקות.'}
