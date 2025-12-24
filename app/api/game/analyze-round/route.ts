@@ -196,12 +196,19 @@ export async function POST(request: Request) {
           if (round) {
             const fallbackTechniques = round.correctTechniques || ['emotional_language', 'false_dilemma'] as ManipulationTechnique[]
             // Try to generate a proper neutral alternative using the fallback function
-            let neutralAlternative = round.manipulativePost // Default to original if generation fails
+            // NEVER use manipulativePost as neutralAlternative - they must be different!
+            let neutralAlternative = `דיון מאוזן על ${round.topic} מבוסס עובדות וללא מניפולציה רגשית.` // Default placeholder
             try {
               const { generateNeutralAlternativeFallback } = await import('@/lib/ai/geminiService')
               const generated = await generateNeutralAlternativeFallback(round.manipulativePost, round.topic)
-              if (generated && generated.length > 20 && !generated.includes('דיון מאוזן על')) {
+              // Ensure it's different from the original
+              if (generated && 
+                  generated.length > 20 && 
+                  generated.trim() !== round.manipulativePost.trim() &&
+                  !generated.includes('דיון מאוזן על')) {
                 neutralAlternative = generated
+              } else {
+                console.warn('Generated neutral alternative is same as original or invalid, using placeholder')
               }
             } catch (genError) {
               console.error('Failed to generate neutral alternative in catch block:', genError)

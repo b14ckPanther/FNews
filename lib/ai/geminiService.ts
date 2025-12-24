@@ -86,16 +86,21 @@ export async function analyzePost(
   const prompt = `פוסט מניפולטיבי: "${post}"
 הפוסט משתמש בטכניקות מניפולציה: ${correctTechniquesStr}
 
-**משימה חשובה:** צור גרסה ניטרלית מלאה של הפוסט הזה. הגרסה הניטרלית חייבת להיות כתיבה מחדש של אותו פוסט, עם אותו נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה.
+**משימה קריטית:** כתוב מחדש את הפוסט הזה בגרסה ניטרלית. הגרסה הניטרלית חייבת להיות שונה לחלוטין מהפוסט המקורי - אותה נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה, ללא שפה רגשית מניפולטיבית.
 
-דוגמה:
+**חשוב מאוד:** הגרסה הניטרלית חייבת להיות כתיבה מחדש מלאה, לא העתקה של הפוסט המקורי!
+
+דוגמאות:
 פוסט מניפולטיבי: "או שאתה לומד עכשיו או שאתה נכשל לנצח!"
 גרסה ניטרלית: "למידה עקבית יכולה לעזור להצלחה בלימודים."
+
+פוסט מניפולטיבי: "כולם כבר הבינו שזה השיר הכי טוב, ומי שלא מסכים סובל מטעם מוזיקלי של סבתא!"
+גרסה ניטרלית: "יש דעות שונות על איכות השיר. כל אחד יכול להביע את דעתו האישית."
 
 החזר JSON בלבד (ללא טקסט נוסף):
 {
   "explanation": "הסבר קצר על הטכניקות המניפולטיביות בפוסט",
-  "neutralAlternative": "הגרסה הניטרלית המלאה של הפוסט (חייבת להיות כתיבה מחדש של הפוסט המקורי, לא רק משפט כללי)",
+  "neutralAlternative": "הגרסה הניטרלית המלאה - כתיבה מחדש שונה לחלוטין מהפוסט המקורי",
   "manipulationLevel": 50,
   "aiCommentary": "תגובה קצרה"
 }`
@@ -135,18 +140,26 @@ export async function analyzePost(
     // Validate and ensure neutralAlternative is a proper rewrite, not a placeholder
     let neutralAlternative = analysis.neutralAlternative || ''
     
-    // If the neutral alternative looks like a placeholder, try to generate it properly
-    if (!neutralAlternative || 
-        neutralAlternative.includes('גרסה ניטרלית של התוכן') ||
-        neutralAlternative.includes('דיון מאוזן על') ||
-        neutralAlternative.length < 20) {
-      console.warn('Neutral alternative seems like placeholder, generating proper version')
+    // CRITICAL: Ensure neutralAlternative is different from the original post
+    const isSameAsOriginal = neutralAlternative.trim() === post.trim() || 
+                             neutralAlternative.length < 20 ||
+                             neutralAlternative.includes('גרסה ניטרלית של התוכן') ||
+                             neutralAlternative.includes('דיון מאוזן על') ||
+                             !neutralAlternative
+    
+    if (isSameAsOriginal) {
+      console.warn('Neutral alternative is same as original or placeholder, generating proper version')
       try {
         neutralAlternative = await generateNeutralAlternativeFallback(post, topic)
+        // Double-check it's different
+        if (neutralAlternative.trim() === post.trim()) {
+          console.error('Generated neutral alternative is still same as original!')
+          neutralAlternative = `דיון מאוזן על ${topic} מבוסס עובדות וללא מניפולציה רגשית.`
+        }
       } catch (fallbackError) {
         console.error('Failed to generate fallback neutral alternative:', fallbackError)
         // Last resort: create a simple neutral version
-        neutralAlternative = `דיון מאוזן על ${topic} מבוסס עובדות.`
+        neutralAlternative = `דיון מאוזן על ${topic} מבוסס עובדות וללא מניפולציה רגשית.`
       }
     }
 
@@ -179,11 +192,16 @@ export async function generateNeutralAlternativeFallback(
     const model = getGenAI().getGenerativeModel({ model: 'gemini-3-flash-preview' })
     const prompt = `פוסט מניפולטיבי: "${manipulativePost}"
 
-**חשוב מאוד:** כתוב מחדש את הפוסט הזה בגרסה ניטרלית. זה חייב להיות כתיבה מחדש של אותו פוסט עם אותו נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה.
+**משימה קריטית:** כתוב מחדש את הפוסט הזה בגרסה ניטרלית. הגרסה הניטרלית חייבת להיות שונה לחלוטין מהפוסט המקורי - אותה נושא ותוכן, אבל ללא מניפולציה רגשית, ללא דילמות כוזבות, ללא התקפות אישיות, ללא העברת אשמה.
 
-דוגמה:
+**חשוב מאוד:** זה חייב להיות כתיבה מחדש מלאה, לא העתקה! הגרסה הניטרלית חייבת להיות שונה מהפוסט המקורי!
+
+דוגמאות:
 פוסט מניפולטיבי: "באמת בחרת שוב בספה? הנעליים שלך מתייפחות בחושך מרוב הזנחה!"
 גרסה ניטרלית: "פעילות גופנית סדירה חשובה לבריאות. כדאי לנסות לשלב פעילות בשגרה היומית."
+
+פוסט מניפולטיבי: "כולם כבר הבינו שזה השיר הכי טוב, ומי שלא מסכים סובל מטעם מוזיקלי של סבתא!"
+גרסה ניטרלית: "יש דעות שונות על איכות השיר. כל אחד יכול להביע את דעתו האישית."
 
 החזר רק את הגרסה הניטרלית, ללא הסברים, ללא מרכאות, ללא טקסט נוסף.`
 
@@ -198,13 +216,20 @@ export async function generateNeutralAlternativeFallback(
       .replace(/^גרסה ניטרלית:?\s*/i, '') // Remove "גרסה ניטרלית:" prefix if present
       .trim()
     
-    // Validate it's not a placeholder
-    if (neutralText && 
-        neutralText.length > 15 && 
-        !neutralText.includes('גרסה ניטרלית של התוכן') &&
-        !neutralText.includes('דיון מאוזן על') &&
-        neutralText !== manipulativePost) {
+    // CRITICAL: Validate it's not a placeholder and is different from original
+    const isDifferent = neutralText.trim() !== manipulativePost.trim()
+    const isNotPlaceholder = neutralText.length > 20 && 
+                             !neutralText.includes('גרסה ניטרלית של התוכן') &&
+                             !neutralText.includes('דיון מאוזן על')
+    
+    if (neutralText && isDifferent && isNotPlaceholder) {
       return neutralText
+    } else {
+      console.warn('Generated neutral text is same as original or placeholder:', {
+        neutralText: neutralText.substring(0, 50),
+        isDifferent,
+        isNotPlaceholder
+      })
     }
   } catch (error) {
     console.error('Error generating fallback neutral alternative:', error)
