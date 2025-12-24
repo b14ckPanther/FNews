@@ -76,9 +76,6 @@ export default function JoinByCodePage() {
           <p className="text-fire-300 text-lg mb-4">
             הצטרף למשחק
           </p>
-          <div className="text-fire-400">
-            קוד משחק: <span className="font-mono font-bold text-2xl">{code}</span>
-          </div>
         </div>
 
         <div className="space-y-6">

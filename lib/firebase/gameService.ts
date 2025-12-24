@@ -67,9 +67,24 @@ export async function joinGame(
       return null
     }
 
-    const gameDoc = querySnapshot.docs[0]
-    const gameData = gameDoc.data() as Game
+    // Get the most recent game (by createdAt) in case of duplicate codes
+    let gameDoc = querySnapshot.docs[0]
+    let latestGame = gameDoc.data() as Game
+    
+    if (querySnapshot.docs.length > 1) {
+      // Find the most recent game (highest createdAt)
+      querySnapshot.docs.forEach((doc) => {
+        const game = doc.data() as Game
+        if (game.createdAt > latestGame.createdAt) {
+          gameDoc = doc
+          latestGame = game
+        }
+      })
+    }
 
+    const gameData = latestGame
+
+    // Only allow joining if game is in lobby status
     if (gameData.status !== 'lobby') {
       console.log(`Game ${gameDoc.id} status is ${gameData.status}, not lobby`)
       return null

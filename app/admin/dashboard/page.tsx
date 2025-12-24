@@ -49,13 +49,14 @@ export default function AdminDashboard() {
   }, [authenticated])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || game) return
 
-    // Create game automatically when admin logs in
+    // Create game automatically when admin logs in (only once)
     const createAdminGame = async () => {
       try {
         setGameLoading(true)
         const gameId = await createGame(user.uid, 'Admin')
+        
         // Subscribe to game updates
         const unsubscribe = subscribeToGame(gameId, (gameData) => {
           setGame(gameData)
