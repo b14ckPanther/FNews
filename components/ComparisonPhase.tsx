@@ -123,7 +123,7 @@ export default function ComparisonPhase({
 
         <div className="bg-fire-900/20 rounded-lg p-6 mb-6 border border-fire-800">
           <h3 className="text-xl font-semibold text-fire-400 mb-4">
-            שאלות להרהור:
+            שאלות למחשבה:
           </h3>
           <ul className="space-y-2 text-fire-300 list-disc list-inside">
             <li>איזו גרסה גרמה לך לחוש רגש יותר?</li>
