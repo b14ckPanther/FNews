@@ -14,9 +14,17 @@ interface GameLobbyProps {
 export default function GameLobby({ game, userId, isHost }: GameLobbyProps) {
   const [loading, setLoading] = useState(false)
   const players = Object.values(game.players)
+  
+  // Ensure host detection works - check both player record and hostId
+  const userIsHost = isHost || game.hostId === userId
 
   const handleStartGame = async () => {
-    if (!isHost) return
+    // Allow start if user is host OR if user created the game (matches hostId)
+    const canStart = isHost || game.hostId === userId
+    if (!canStart) {
+      console.error('Not authorized to start game. isHost:', isHost, 'hostId:', game.hostId, 'userId:', userId)
+      return
+    }
 
     setLoading(true)
     try {
@@ -109,7 +117,7 @@ export default function GameLobby({ game, userId, isHost }: GameLobbyProps) {
                 קוד משחק - שתף עם שחקנים
               </div>
               
-              {isHost && (
+              {userIsHost && (
                 <div className="mb-6">
                   <div className="text-fire-400 text-sm mb-3">
                     סרוק QR כדי להצטרף
@@ -137,7 +145,7 @@ export default function GameLobby({ game, userId, isHost }: GameLobbyProps) {
                   העתק
                 </button>
               </div>
-              {isHost && (
+              {userIsHost && (
                 <div className="text-fire-400 text-sm space-y-1">
                   <div>אתה המארח - שתף QR או קוד זה עם שחקנים אחרים</div>
                   <div className="text-xs text-fire-500">
@@ -187,21 +195,28 @@ export default function GameLobby({ game, userId, isHost }: GameLobbyProps) {
           </div>
         </div>
 
-        {isHost && (
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-gray-400">
+            Debug: userId={userId}, hostId={game.hostId}, isHost={isHost.toString()}, players={players.length}
+          </div>
+        )}
+
+        {userIsHost && (
           <button
             onClick={handleStartGame}
-            disabled={loading || players.length < 2}
+            disabled={loading || players.length < 1}
             className="w-full bg-fire-600 hover:bg-fire-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
           >
             {loading
               ? 'מתחיל משחק...'
-              : players.length < 2
-              ? 'ממתין לשחקנים נוספים...'
+              : players.length < 1
+              ? 'ממתין לשחקנים...'
               : 'התחל משחק'}
           </button>
         )}
 
-        {!isHost && (
+        {!userIsHost && (
           <div className="text-center text-fire-300 py-4">
             ממתין למארח להתחיל את המשחק...
           </div>

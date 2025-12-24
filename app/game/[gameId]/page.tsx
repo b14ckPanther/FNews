@@ -43,7 +43,8 @@ export default function GamePage() {
     )
   }
 
-  const isHost = game.players[user.uid]?.isHost || false
+  // Check if user is host - either by player record or by being the game creator
+  const isHost = game.players[user.uid]?.isHost || game.hostId === user.uid || false
   const currentRound = game.currentRoundId
     ? game.rounds[game.currentRoundId]
     : null
