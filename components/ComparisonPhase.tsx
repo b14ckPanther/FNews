@@ -6,7 +6,7 @@ import {
   incrementRoundNumber,
   createRound,
 } from '@/lib/firebase/gameService'
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 
 interface ComparisonPhaseProps {
   game: Game
