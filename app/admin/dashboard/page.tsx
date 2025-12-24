@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     }
 
     createAdminGame()
-  }, [user])
+  }, [user, game])
 
   const handleStartGame = async () => {
     if (!game || !user) return

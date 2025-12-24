@@ -11,9 +11,13 @@ import { getServerFirestore } from '@/lib/firebase/serverConfig'
 import { Game, Round } from '@/types/game'
 
 export async function POST(request: Request) {
+  let gameId: string | undefined
+  let roundId: string | undefined
+  
   try {
     const body = await request.json()
-    const { gameId, roundId } = body as { gameId: string; roundId: string }
+    gameId = body.gameId as string
+    roundId = body.roundId as string
 
     const db = getServerFirestore()
     if (!db) {
@@ -131,8 +135,8 @@ export async function POST(request: Request) {
     console.error('Error analyzing round:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Error details:', {
-      gameId,
-      roundId,
+      gameId: gameId || 'unknown',
+      roundId: roundId || 'unknown',
       error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined
     })
