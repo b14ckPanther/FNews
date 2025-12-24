@@ -94,8 +94,20 @@ JSON: {"explanation":"הסבר קצר (משפט אחד)","neutralAlternative":"�
 
     // Extract JSON from markdown code blocks if present
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    
+    // Try to extract JSON if it's embedded in text
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      text = jsonMatch[0]
+    }
 
-    const analysis = JSON.parse(text)
+    let analysis
+    try {
+      analysis = JSON.parse(text)
+    } catch (parseError) {
+      console.error('Failed to parse JSON from Gemini response:', text)
+      throw new Error(`Invalid JSON response from AI: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
+    }
 
     // Calculate manipulation level if not provided or out of range
     let manipulationLevel = parseInt(analysis.manipulationLevel) || 50

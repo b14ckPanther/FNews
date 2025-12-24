@@ -37,24 +37,45 @@ export async function POST(request: Request) {
     }
 
     // Get correct techniques from round (stored when round was created)
-    const correctTechniques = round.correctTechniques || []
+    // Handle backwards compatibility: check both new location and old location
+    let correctTechniques = round.correctTechniques || []
+    
+    // Fallback: check old location in aiAnalysis (for backwards compatibility)
+    if (correctTechniques.length === 0 && round.aiAnalysis?.correctTechniques) {
+      correctTechniques = round.aiAnalysis.correctTechniques
+    }
     
     if (correctTechniques.length === 0) {
+      console.error('No correct techniques found for round:', roundId, 'Round data:', JSON.stringify(round, null, 2))
       return NextResponse.json(
-        { error: 'Correct techniques not found' },
+        { error: 'Correct techniques not found in round' },
         { status: 400 }
       )
     }
 
     // Analyze the post
-    const analysis = await analyzePost(
-      round.manipulativePost,
-      round.topic,
-      correctTechniques
-    )
+    let analysis
+    try {
+      analysis = await analyzePost(
+        round.manipulativePost,
+        round.topic,
+        correctTechniques
+      )
+    } catch (error) {
+      console.error('Error calling analyzePost:', error)
+      throw new Error(`Failed to analyze post: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+
+    // Ensure correctTechniques is in the analysis (for consistency)
+    analysis.correctTechniques = correctTechniques
 
     // Update round with analysis
-    await updateRoundAnalysis(gameId, roundId, analysis)
+    try {
+      await updateRoundAnalysis(gameId, roundId, analysis)
+    } catch (error) {
+      console.error('Error updating round analysis:', error)
+      throw new Error(`Failed to update round analysis: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
 
     // Calculate scores for all players
     const totalTime = 60000 // 60 seconds
@@ -63,43 +84,63 @@ export async function POST(request: Request) {
     for (const [playerId, guess] of Object.entries(playerGuesses)) {
       if (game.players[playerId]?.isAI) continue
 
-      const timeRemaining = round.guessingEndsAt
-        ? Math.max(0, round.guessingEndsAt - guess.timestamp)
-        : 0
+      try {
+        const timeRemaining = round.guessingEndsAt
+          ? Math.max(0, round.guessingEndsAt - guess.timestamp)
+          : 0
 
-      const score = calculateScore(
-        guess.techniques,
-        analysis.correctTechniques,
-        timeRemaining,
-        totalTime
-      )
+        const score = calculateScore(
+          guess.techniques,
+          analysis.correctTechniques,
+          timeRemaining,
+          totalTime
+        )
 
-      await updatePlayerScore(gameId, playerId, score)
+        await updatePlayerScore(gameId, playerId, score)
+      } catch (error) {
+        console.error(`Error calculating score for player ${playerId}:`, error)
+        // Continue with other players even if one fails
+      }
     }
 
     // Handle AI player guess if exists
     const aiPlayer = Object.values(game.players).find((p) => p.isAI)
     if (aiPlayer && playerGuesses[aiPlayer.id]) {
-      const aiGuess = playerGuesses[aiPlayer.id]
-      const timeRemaining = round.guessingEndsAt
-        ? Math.max(0, round.guessingEndsAt - aiGuess.timestamp)
-        : 0
+      try {
+        const aiGuess = playerGuesses[aiPlayer.id]
+        const timeRemaining = round.guessingEndsAt
+          ? Math.max(0, round.guessingEndsAt - aiGuess.timestamp)
+          : 0
 
-      const score = calculateScore(
-        aiGuess.techniques,
-        analysis.correctTechniques,
-        timeRemaining,
-        totalTime
-      )
+        const score = calculateScore(
+          aiGuess.techniques,
+          analysis.correctTechniques,
+          timeRemaining,
+          totalTime
+        )
 
-      await updatePlayerScore(gameId, aiPlayer.id, score)
+        await updatePlayerScore(gameId, aiPlayer.id, score)
+      } catch (error) {
+        console.error(`Error calculating score for AI player:`, error)
+        // Continue even if AI score calculation fails
+      }
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error analyzing round:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error details:', {
+      gameId,
+      roundId,
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { error: 'Failed to analyze round' },
+      { 
+        error: 'Failed to analyze round',
+        details: errorMessage 
+      },
       { status: 500 }
     )
   }

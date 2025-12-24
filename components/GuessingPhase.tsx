@@ -54,9 +54,23 @@ export default function GuessingPhase({
               gameId: game.id,
               roundId: round.id,
             }),
-          }).then(() => {
+          })
+          .then(async (response) => {
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}))
+              console.error('Failed to analyze round:', errorData)
+              throw new Error(errorData.error || 'Failed to analyze round')
+            }
+            return response.json()
+          })
+          .then(() => {
             updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
-          }).catch(console.error)
+          })
+          .catch((error) => {
+            console.error('Error in auto-advance:', error)
+            // Still try to move to reveal phase even if analysis fails
+            updateRoundPhase(game.id, round.id, 'reveal').catch(console.error)
+          })
         } else if (remaining <= 0) {
           clearInterval(interval)
         }
